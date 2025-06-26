@@ -1,8 +1,9 @@
 
 import { createClient } from '@supabase/supabase-js';
+import { Expense, Budget } from '@/types/expense';
 
 const supabaseUrl = 'https://hrsvanxxkqggmnzisioi.supabase.co';
-const supabaseAnonKey = 'YOUR_SUPABASE_ANON_KEY'; // You'll need to provide this
+const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhyc3Zhbnh4a3FnZ21uemlzaW9pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA5MjA1NTksImV4cCI6MjA2NjQ5NjU1OX0.KK9fGXGpdZbTXfl54OmhqyM9rh2rbu5Dct0Bonj7bMI';
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
