@@ -6,21 +6,31 @@ import { Expense, Budget } from '@/types/expense';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { DollarSign, TrendingUp, AlertTriangle, Calendar } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { DollarSign, TrendingUp, AlertTriangle, Calendar, Plus, List, Target } from 'lucide-react';
 import { ExpenseChart } from './ExpenseChart';
 import { RecentExpenses } from './RecentExpenses';
+import { AddExpenseForm } from '@/components/expense/AddExpenseForm';
+import { ExpenseList } from '@/components/expense/ExpenseList';
+import { EditExpenseForm } from '@/components/expense/EditExpenseForm';
+import { BudgetForm } from '@/components/budget/BudgetForm';
 
 export function Dashboard() {
   const { user, signOut } = useAuth();
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [budget, setBudget] = useState<Budget | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [showBudgetForm, setShowBudgetForm] = useState(false);
 
   useEffect(() => {
     if (user) {
       loadDashboardData();
     }
-  }, [user]);
+  }, [user, refreshTrigger]);
 
   const loadDashboardData = async () => {
     if (!user) return;
@@ -49,6 +59,10 @@ export function Dashboard() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleRefresh = () => {
+    setRefreshTrigger(prev => prev + 1);
   };
 
   const getCurrentMonthTotal = () => {
@@ -100,12 +114,34 @@ export function Dashboard() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+              <h1 className="text-2xl font-bold text-gray-900">Expense Tracker</h1>
               <p className="text-gray-600">Welcome back, {user?.user_metadata?.full_name || user?.email}</p>
             </div>
-            <Button onClick={signOut} variant="outline">
-              Sign Out
-            </Button>
+            <div className="flex items-center gap-2">
+              <Dialog open={showAddForm} onOpenChange={setShowAddForm}>
+                <DialogTrigger asChild>
+                  <Button className="flex items-center gap-2">
+                    <Plus className="h-4 w-4" />
+                    Add Expense
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl">
+                  <DialogHeader>
+                    <DialogTitle>Add New Expense</DialogTitle>
+                  </DialogHeader>
+                  <AddExpenseForm 
+                    onExpenseAdded={() => {
+                      handleRefresh();
+                      setShowAddForm(false);
+                    }}
+                    onClose={() => setShowAddForm(false)}
+                  />
+                </DialogContent>
+              </Dialog>
+              <Button onClick={signOut} variant="outline">
+                Sign Out
+              </Button>
+            </div>
           </div>
         </div>
       </header>
@@ -164,7 +200,7 @@ export function Dashboard() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="cursor-pointer" onClick={() => setShowBudgetForm(true)}>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -179,7 +215,7 @@ export function Dashboard() {
                       </p>
                     </div>
                   ) : (
-                    <p className="text-lg font-bold text-gray-500">Not set</p>
+                    <p className="text-lg font-bold text-gray-500">Click to set</p>
                   )}
                 </div>
                 <div className={`p-3 rounded-full ${budgetWarning ? 'bg-red-100' : 'bg-yellow-100'}`}>
@@ -195,11 +231,70 @@ export function Dashboard() {
           </Card>
         </div>
 
-        {/* Charts and Recent Expenses */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <ExpenseChart expenses={expenses} />
-          <RecentExpenses expenses={expenses.slice(0, 5)} />
-        </div>
+        {/* Main Content */}
+        <Tabs defaultValue="overview" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="expenses">All Expenses</TabsTrigger>
+            <TabsTrigger value="budget">Budget</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="overview" className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <ExpenseChart expenses={expenses} />
+              <RecentExpenses expenses={expenses.slice(0, 5)} />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="expenses">
+            <ExpenseList 
+              onEditExpense={setEditingExpense}
+              refreshTrigger={refreshTrigger}
+            />
+          </TabsContent>
+
+          <TabsContent value="budget">
+            <BudgetForm 
+              currentBudget={budget?.monthly_limit}
+              onBudgetSet={handleRefresh}
+            />
+          </TabsContent>
+        </Tabs>
+
+        {/* Edit Expense Dialog */}
+        <Dialog open={!!editingExpense} onOpenChange={() => setEditingExpense(null)}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Edit Expense</DialogTitle>
+            </DialogHeader>
+            {editingExpense && (
+              <EditExpenseForm 
+                expense={editingExpense}
+                onExpenseUpdated={() => {
+                  handleRefresh();
+                  setEditingExpense(null);
+                }}
+                onClose={() => setEditingExpense(null)}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Budget Dialog */}
+        <Dialog open={showBudgetForm} onOpenChange={setShowBudgetForm}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Manage Budget</DialogTitle>
+            </DialogHeader>
+            <BudgetForm 
+              currentBudget={budget?.monthly_limit}
+              onBudgetSet={() => {
+                handleRefresh();
+                setShowBudgetForm(false);
+              }}
+            />
+          </DialogContent>
+        </Dialog>
       </main>
     </div>
   );
