@@ -7,6 +7,10 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { AuthPage } from "@/components/auth/AuthPage";
 import { Dashboard } from "@/components/dashboard/Dashboard";
+import { ExpenseList } from "@/components/expense/ExpenseList";
+import { BudgetForm } from "@/components/budget/BudgetForm";
+import { ProfilePage } from "@/components/profile/ProfilePage";
+import { AppLayout } from "@/components/layout/AppLayout";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 
@@ -27,7 +31,17 @@ function AppContent() {
     return <AuthPage />;
   }
 
-  return <Dashboard />;
+  return (
+    <AppLayout>
+      <Routes>
+        <Route path="/" element={<Dashboard />} />
+        <Route path="/expenses" element={<ExpenseList refreshTrigger={0} />} />
+        <Route path="/budget" element={<BudgetForm />} />
+        <Route path="/profile" element={<ProfilePage />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </AppLayout>
+  );
 }
 
 const App = () => (
@@ -37,11 +51,7 @@ const App = () => (
       <Sonner />
       <AuthProvider>
         <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<AppContent />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <AppContent />
         </BrowserRouter>
       </AuthProvider>
     </TooltipProvider>

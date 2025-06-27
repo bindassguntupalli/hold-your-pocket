@@ -1,4 +1,3 @@
-
 import { createClient } from '@supabase/supabase-js';
 import { Expense, Budget } from '@/types/expense';
 
@@ -66,45 +65,29 @@ export const expenseService = {
     
     if (error) throw error;
     return data;
+  },
+
+  // Export expenses to CSV
+  async exportExpensesToCSV(userId: string, month: string) {
+    const startDate = `${month}-01`;
+    const endDate = `${month}-31`;
+    
+    const { data, error } = await supabase
+      .from('expenses')
+      .select('*')
+      .eq('user_id', userId)
+      .gte('date', startDate)
+      .lte('date', endDate)
+      .order('date', { ascending: false });
+    
+    if (error) throw error;
+    return data;
   }
 };
 
 export const budgetService = {
-  // Check if budgets table exists and create if needed
-  async ensureBudgetTable() {
-    try {
-      // Try to check if table exists
-      const { error } = await supabase
-        .from('budgets')
-        .select('id')
-        .limit(1);
-      
-      if (error && error.code === '42P01') {
-        // Table doesn't exist, we'll store budget in user metadata for now
-        console.log('Budgets table does not exist. Using localStorage as fallback.');
-        return false;
-      }
-      return true;
-    } catch (error) {
-      console.error('Error checking budget table:', error);
-      return false;
-    }
-  },
-
-  // Get current month budget
+  // Get current month budget - Supabase only
   async getCurrentBudget(userId: string) {
-    const tableExists = await this.ensureBudgetTable();
-    
-    if (!tableExists) {
-      // Fallback to localStorage
-      const budgetKey = `budget_${userId}_${new Date().toISOString().substring(0, 7)}`;
-      const storedBudget = localStorage.getItem(budgetKey);
-      if (storedBudget) {
-        return JSON.parse(storedBudget);
-      }
-      return null;
-    }
-
     const now = new Date();
     const month = now.toISOString().substring(0, 7); // YYYY-MM format
     
@@ -119,29 +102,8 @@ export const budgetService = {
     return data;
   },
 
-  // Set monthly budget
-  async setBudget(userId: string, monthlyLimit: number) {
-    const tableExists = await this.ensureBudgetTable();
-    
-    if (!tableExists) {
-      // Fallback to localStorage
-      const now = new Date();
-      const budget = {
-        id: `budget_${userId}_${now.getTime()}`,
-        user_id: userId,
-        monthly_limit: monthlyLimit,
-        month: now.toISOString().substring(0, 7),
-        year: now.getFullYear(),
-        current_spent: 0,
-        created_at: now.toISOString(),
-        updated_at: now.toISOString()
-      };
-      
-      const budgetKey = `budget_${userId}_${budget.month}`;
-      localStorage.setItem(budgetKey, JSON.stringify(budget));
-      return budget;
-    }
-
+  // Set monthly budget - Supabase only
+  async setBudget(userId: string, amount: number) {
     const now = new Date();
     const month = now.toISOString().substring(0, 7);
     const year = now.getFullYear();
@@ -150,14 +112,28 @@ export const budgetService = {
       .from('budgets')
       .upsert({
         user_id: userId,
-        monthly_limit: monthlyLimit,
         month,
+        amount,
         year,
-        current_spent: 0
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       })
-      .select();
+      .select()
+      .single();
     
     if (error) throw error;
-    return data[0];
+    return data;
+  },
+
+  // Get all budgets for a user
+  async getUserBudgets(userId: string) {
+    const { data, error } = await supabase
+      .from('budgets')
+      .select('*')
+      .eq('user_id', userId)
+      .order('month', { ascending: false });
+    
+    if (error) throw error;
+    return data;
   }
 };

@@ -49,8 +49,8 @@ export function BudgetForm({ currentBudget, onBudgetSet }: BudgetFormProps) {
       if (onBudgetSet) onBudgetSet();
     } catch (error) {
       console.error('Error setting budget:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      toast.error(`Failed to set budget: ${errorMessage}`);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to set budget';
+      toast.error(`Error: ${errorMessage}`);
     } finally {
       setLoading(false);
     }
@@ -88,7 +88,7 @@ export function BudgetForm({ currentBudget, onBudgetSet }: BudgetFormProps) {
             </div>
             <div className="mt-3 p-4 bg-blue-50 rounded-lg border border-blue-200">
               <p className="text-sm text-blue-800 font-medium">
-                💡 Set a monthly spending limit to help track your expenses in Indian Rupees
+                💡 Set a monthly spending limit to track your expenses in Indian Rupees
               </p>
               <p className="text-xs text-blue-600 mt-1">
                 You'll get alerts when you're close to your budget limit

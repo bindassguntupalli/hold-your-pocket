@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { expenseService, budgetService } from '@/lib/supabase';
@@ -17,6 +16,7 @@ import { EditExpenseForm } from '@/components/expense/EditExpenseForm';
 import { BudgetForm } from '@/components/budget/BudgetForm';
 import { formatCurrency } from '@/lib/utils';
 import { toast } from '@/components/ui/sonner';
+import { MonthlyExpensesModal } from './MonthlyExpensesModal';
 
 export function Dashboard() {
   const { user, signOut } = useAuth();
@@ -27,6 +27,7 @@ export function Dashboard() {
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [showBudgetForm, setShowBudgetForm] = useState(false);
+  const [showMonthlyExpenses, setShowMonthlyExpenses] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -100,7 +101,7 @@ export function Dashboard() {
     if (!budget) return { status: 'No Budget Set', color: 'bg-gray-100 text-gray-600', percentage: 0 };
     
     const currentMonthTotal = getCurrentMonthTotal();
-    const percentage = (currentMonthTotal / budget.monthly_limit) * 100;
+    const percentage = (currentMonthTotal / budget.amount) * 100;
     
     if (percentage >= 100) {
       return { status: 'Budget Exceeded', color: 'bg-red-100 text-red-800', percentage };
@@ -114,7 +115,7 @@ export function Dashboard() {
   const currentMonthTotal = getCurrentMonthTotal();
   const topCategory = getTopCategory();
   const budgetStatus = getBudgetStatus();
-  const remainingBudget = budget ? budget.monthly_limit - currentMonthTotal : 0;
+  const remainingBudget = budget ? budget.amount - currentMonthTotal : 0;
 
   if (loading) {
     return (
@@ -174,8 +175,11 @@ export function Dashboard() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Enhanced Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {/* This Month Card */}
-          <Card className="relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-blue-500 to-blue-600 text-white">
+          {/* This Month Card - Make it clickable */}
+          <Card 
+            className="relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-blue-500 to-blue-600 text-white cursor-pointer"
+            onClick={() => setShowMonthlyExpenses(true)}
+          >
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -188,7 +192,7 @@ export function Dashboard() {
                       const date = new Date(e.date);
                       const now = new Date();
                       return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
-                    }).length} transactions
+                    }).length} transactions • Click to view
                   </p>
                 </div>
                 <div className="p-4 bg-white/20 rounded-full">
@@ -252,7 +256,7 @@ export function Dashboard() {
                   {budget ? (
                     <div>
                       <p className="text-xl font-bold text-white">
-                        {formatCurrency(budget.monthly_limit)}
+                        {formatCurrency(budget.amount)}
                       </p>
                       <p className="text-orange-100 text-sm">
                         {formatCurrency(Math.max(0, remainingBudget))} remaining
@@ -325,7 +329,7 @@ export function Dashboard() {
 
           <TabsContent value="budget">
             <BudgetForm 
-              currentBudget={budget?.monthly_limit}
+              currentBudget={budget?.amount}
               onBudgetSet={handleRefresh}
             />
           </TabsContent>
@@ -357,7 +361,7 @@ export function Dashboard() {
               <DialogTitle>Manage Monthly Budget</DialogTitle>
             </DialogHeader>
             <BudgetForm 
-              currentBudget={budget?.monthly_limit}
+              currentBudget={budget?.amount}
               onBudgetSet={() => {
                 handleRefresh();
                 setShowBudgetForm(false);
@@ -365,6 +369,12 @@ export function Dashboard() {
             />
           </DialogContent>
         </Dialog>
+
+        {/* Add Monthly Expenses Modal */}
+        <MonthlyExpensesModal 
+          open={showMonthlyExpenses}
+          onOpenChange={setShowMonthlyExpenses}
+        />
       </main>
     </div>
   );
