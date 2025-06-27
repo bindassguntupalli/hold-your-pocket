@@ -4,6 +4,7 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Legend } from 'recharts';
 import { Expense } from '@/types/expense';
 import { formatCurrency } from '@/lib/utils';
+import { PieChart as PieChartIcon, BarChart3 } from 'lucide-react';
 
 interface ExpenseChartProps {
   expenses: Expense[];
@@ -40,7 +41,7 @@ export function ExpenseChart({ expenses }: ExpenseChartProps) {
     .sort((a, b) => new Date(a.month).getTime() - new Date(b.month).getTime())
     .slice(-6); // Last 6 months
 
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D'];
+  const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4', '#F97316', '#84CC16'];
 
   const chartConfig = {
     amount: {
@@ -51,9 +52,9 @@ export function ExpenseChart({ expenses }: ExpenseChartProps) {
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-white p-3 border rounded-lg shadow-lg">
-          <p className="font-medium">{payload[0].payload.category || payload[0].payload.month}</p>
-          <p className="text-blue-600 font-semibold">
+        <div className="bg-white p-4 border rounded-lg shadow-lg border-gray-200">
+          <p className="font-semibold text-gray-900">{payload[0].payload.category || payload[0].payload.month}</p>
+          <p className="text-blue-600 font-bold text-lg">
             {formatCurrency(payload[0].value)}
           </p>
         </div>
@@ -62,12 +63,35 @@ export function ExpenseChart({ expenses }: ExpenseChartProps) {
     return null;
   };
 
+  if (expenses.length === 0) {
+    return (
+      <Card className="border-0 shadow-lg">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <PieChartIcon className="h-5 w-5 text-blue-600" />
+            Expense Analytics
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-12">
+            <BarChart3 className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-500 font-medium">No data to display</p>
+            <p className="text-gray-400 text-sm">Add some expenses to see analytics</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Pie Chart - Category Breakdown */}
-      <Card>
+      <Card className="border-0 shadow-lg">
         <CardHeader>
-          <CardTitle>Expenses by Category</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <PieChartIcon className="h-5 w-5 text-blue-600" />
+            Expenses by Category
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <ChartContainer config={chartConfig} className="h-[300px]">
@@ -79,7 +103,7 @@ export function ExpenseChart({ expenses }: ExpenseChartProps) {
                   cy="50%"
                   labelLine={false}
                   label={({ category, percent }) => `${category} ${(percent * 100).toFixed(0)}%`}
-                  outerRadius={80}
+                  outerRadius={100}
                   fill="#8884d8"
                   dataKey="amount"
                 >
@@ -96,18 +120,39 @@ export function ExpenseChart({ expenses }: ExpenseChartProps) {
 
       {/* Bar Chart - Monthly Trend */}
       {barChartData.length > 0 && (
-        <Card>
+        <Card className="border-0 shadow-lg">
           <CardHeader>
-            <CardTitle>Monthly Spending Trend</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5 text-green-600" />
+              Monthly Spending Trend
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <ChartContainer config={chartConfig} className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={barChartData}>
-                  <XAxis dataKey="month" />
-                  <YAxis tickFormatter={(value) => `₹${value}`} />
+                  <XAxis 
+                    dataKey="month" 
+                    tick={{ fontSize: 12 }}
+                    tickLine={{ stroke: '#e5e7eb' }}
+                  />
+                  <YAxis 
+                    tickFormatter={(value) => `₹${value}`} 
+                    tick={{ fontSize: 12 }}
+                    tickLine={{ stroke: '#e5e7eb' }}
+                  />
                   <ChartTooltip content={<CustomTooltip />} />
-                  <Bar dataKey="amount" fill="#0088FE" radius={[4, 4, 0, 0]} />
+                  <Bar 
+                    dataKey="amount" 
+                    fill="url(#colorGradient)" 
+                    radius={[6, 6, 0, 0]}
+                  />
+                  <defs>
+                    <linearGradient id="colorGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor="#3B82F6" stopOpacity={0.3}/>
+                    </linearGradient>
+                  </defs>
                 </BarChart>
               </ResponsiveContainer>
             </ChartContainer>
