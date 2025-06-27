@@ -2,6 +2,7 @@
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Expense } from '@/types/expense';
+import { formatCurrency } from '@/lib/utils';
 
 interface RecentExpensesProps {
   expenses: Expense[];
@@ -26,32 +27,34 @@ export function RecentExpenses({ expenses }: RecentExpensesProps) {
         <CardTitle>Recent Expenses</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
-          {expenses.length === 0 ? (
-            <p className="text-gray-500 text-center py-4">No expenses yet</p>
-          ) : (
-            expenses.map((expense) => (
-              <div key={expense.id} className="flex items-center justify-between p-3 border rounded-lg">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <Badge className={getCategoryColor(expense.category)}>
-                      {expense.category}
-                    </Badge>
+        {expenses.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            No expenses yet. Add your first expense!
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {expenses.map((expense) => (
+              <div key={expense.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div className="flex items-center space-x-3">
+                  <Badge className={getCategoryColor(expense.category)}>
+                    {expense.category}
+                  </Badge>
+                  <div>
+                    <p className="font-medium text-gray-900">{expense.description}</p>
+                    <p className="text-sm text-gray-500">
+                      {new Date(expense.date).toLocaleDateString('en-IN')}
+                    </p>
                   </div>
-                  <p className="font-medium">{expense.description}</p>
-                  <p className="text-sm text-gray-500">
-                    {new Date(expense.date).toLocaleDateString()}
-                  </p>
                 </div>
                 <div className="text-right">
-                  <p className="text-lg font-bold text-red-600">
-                    -${expense.amount.toFixed(2)}
+                  <p className="font-semibold text-gray-900">
+                    {formatCurrency(expense.amount)}
                   </p>
                 </div>
               </div>
-            ))
-          )}
-        </div>
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
   );

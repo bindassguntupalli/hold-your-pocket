@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { expenseService } from '@/lib/supabase';
@@ -10,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { toast } from '@/components/ui/sonner';
 import { Pencil, Trash2, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { formatCurrency } from '@/lib/utils';
 
 interface ExpenseListProps {
   onEditExpense?: (expense: Expense) => void;
@@ -125,7 +125,7 @@ export function ExpenseList({ onEditExpense, refreshTrigger }: ExpenseListProps)
                     </TableCell>
                     <TableCell>{expense.description}</TableCell>
                     <TableCell className="text-right font-medium">
-                      ${expense.amount.toFixed(2)}
+                      {formatCurrency(expense.amount)}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex gap-2 justify-end">

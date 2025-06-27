@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { toast } from '@/components/ui/sonner';
-import { Target, DollarSign } from 'lucide-react';
+import { Target } from 'lucide-react';
+import { formatCurrency } from '@/lib/utils';
 
 interface BudgetFormProps {
   currentBudget?: number;
@@ -21,7 +22,10 @@ export function BudgetForm({ currentBudget, onBudgetSet }: BudgetFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) return;
+    if (!user) {
+      toast.error('Please login to set budget');
+      return;
+    }
 
     if (!budgetAmount || parseFloat(budgetAmount) <= 0) {
       toast.error('Please enter a valid budget amount');
@@ -30,13 +34,14 @@ export function BudgetForm({ currentBudget, onBudgetSet }: BudgetFormProps) {
 
     setLoading(true);
     try {
+      console.log('Setting budget for user:', user.id, 'Amount:', budgetAmount);
       await budgetService.setBudget(user.id, parseFloat(budgetAmount));
-      toast.success('Monthly budget set successfully!');
+      toast.success(`Monthly budget set to ${formatCurrency(parseFloat(budgetAmount))}!`);
       
       if (onBudgetSet) onBudgetSet();
     } catch (error) {
       console.error('Error setting budget:', error);
-      toast.error('Failed to set budget');
+      toast.error(`Failed to set budget: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setLoading(false);
     }
@@ -53,23 +58,23 @@ export function BudgetForm({ currentBudget, onBudgetSet }: BudgetFormProps) {
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="budget">Monthly Budget Limit</Label>
+            <Label htmlFor="budget">Monthly Budget Limit (INR)</Label>
             <div className="relative">
-              <DollarSign className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+              <span className="absolute left-3 top-3 text-gray-400">₹</span>
               <Input
                 id="budget"
                 type="number"
-                step="0.01"
+                step="1"
                 min="0"
-                placeholder="1000.00"
+                placeholder="10000"
                 value={budgetAmount}
                 onChange={(e) => setBudgetAmount(e.target.value)}
-                className="pl-10"
+                className="pl-8"
                 required
               />
             </div>
             <p className="text-sm text-gray-500 mt-1">
-              Set a monthly spending limit to help track your expenses
+              Set a monthly spending limit to help track your expenses in Indian Rupees
             </p>
           </div>
 

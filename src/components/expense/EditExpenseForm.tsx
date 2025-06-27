@@ -93,18 +93,18 @@ export function EditExpenseForm({ expense, onExpenseUpdated, onClose }: EditExpe
             </div>
 
             <div>
-              <Label htmlFor="amount">Amount *</Label>
+              <Label htmlFor="amount">Amount (INR) *</Label>
               <div className="relative">
-                <DollarSign className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <span className="absolute left-3 top-3 text-gray-400">₹</span>
                 <Input
                   id="amount"
                   type="number"
-                  step="0.01"
+                  step="1"
                   min="0"
-                  placeholder="0.00"
+                  placeholder="0"
                   value={formData.amount}
                   onChange={(e) => setFormData({...formData, amount: e.target.value})}
-                  className="pl-10"
+                  className="pl-8"
                   required
                 />
               </div>

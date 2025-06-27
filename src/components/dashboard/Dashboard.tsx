@@ -8,13 +8,14 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { DollarSign, TrendingUp, AlertTriangle, Calendar, Plus, List, Target } from 'lucide-react';
+import { DollarSign, TrendingUp, AlertTriangle, Calendar, Plus, Target } from 'lucide-react';
 import { ExpenseChart } from './ExpenseChart';
 import { RecentExpenses } from './RecentExpenses';
 import { AddExpenseForm } from '@/components/expense/AddExpenseForm';
 import { ExpenseList } from '@/components/expense/ExpenseList';
 import { EditExpenseForm } from '@/components/expense/EditExpenseForm';
 import { BudgetForm } from '@/components/budget/BudgetForm';
+import { formatCurrency } from '@/lib/utils';
 
 export function Dashboard() {
   const { user, signOut } = useAuth();
@@ -92,9 +93,25 @@ export function Dashboard() {
     return topCategory ? { name: topCategory[0], amount: topCategory[1] } : null;
   };
 
+  const getBudgetStatus = () => {
+    if (!budget) return { status: 'No Budget Set', color: 'bg-gray-100 text-gray-600' };
+    
+    const currentMonthTotal = getCurrentMonthTotal();
+    const percentage = (currentMonthTotal / budget.monthly_limit) * 100;
+    
+    if (percentage >= 100) {
+      return { status: 'Budget Exceeded', color: 'bg-red-100 text-red-800' };
+    } else if (percentage >= 80) {
+      return { status: 'Budget Warning', color: 'bg-yellow-100 text-yellow-800' };
+    } else {
+      return { status: 'Within Budget', color: 'bg-green-100 text-green-800' };
+    }
+  };
+
   const currentMonthTotal = getCurrentMonthTotal();
   const topCategory = getTopCategory();
   const budgetWarning = budget && currentMonthTotal > budget.monthly_limit * 0.8;
+  const budgetStatus = getBudgetStatus();
 
   if (loading) {
     return (
@@ -155,7 +172,7 @@ export function Dashboard() {
                 <div>
                   <p className="text-sm font-medium text-gray-600">This Month</p>
                   <p className="text-2xl font-bold text-gray-900">
-                    ${currentMonthTotal.toFixed(2)}
+                    {formatCurrency(currentMonthTotal)}
                   </p>
                 </div>
                 <div className="p-3 bg-blue-100 rounded-full">
@@ -190,7 +207,7 @@ export function Dashboard() {
                     {topCategory ? topCategory.name : 'N/A'}
                   </p>
                   {topCategory && (
-                    <p className="text-sm text-gray-500">${topCategory.amount.toFixed(2)}</p>
+                    <p className="text-sm text-gray-500">{formatCurrency(topCategory.amount)}</p>
                   )}
                 </div>
                 <div className="p-3 bg-purple-100 rounded-full">
@@ -208,25 +225,23 @@ export function Dashboard() {
                   {budget ? (
                     <div>
                       <p className="text-lg font-bold text-gray-900">
-                        ${budget.monthly_limit.toFixed(2)}
+                        {formatCurrency(budget.monthly_limit)}
                       </p>
                       <p className="text-sm text-gray-500">
-                        ${(budget.monthly_limit - currentMonthTotal).toFixed(2)} remaining
+                        {formatCurrency(budget.monthly_limit - currentMonthTotal)} remaining
                       </p>
+                      <Badge className={`mt-1 ${budgetStatus.color}`}>
+                        {budgetStatus.status}
+                      </Badge>
                     </div>
                   ) : (
                     <p className="text-lg font-bold text-gray-500">Click to set</p>
                   )}
                 </div>
                 <div className={`p-3 rounded-full ${budgetWarning ? 'bg-red-100' : 'bg-yellow-100'}`}>
-                  <AlertTriangle className={`h-6 w-6 ${budgetWarning ? 'text-red-600' : 'text-yellow-600'}`} />
+                  <Target className={`h-6 w-6 ${budgetWarning ? 'text-red-600' : 'text-yellow-600'}`} />
                 </div>
               </div>
-              {budgetWarning && (
-                <Badge variant="destructive" className="mt-2">
-                  Budget Warning!
-                </Badge>
-              )}
             </CardContent>
           </Card>
         </div>
