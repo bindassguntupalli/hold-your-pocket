@@ -1,5 +1,8 @@
 
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { expenseService, budgetService } from '@/lib/supabase';
+import { Expense, Budget } from '@/types/expense';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { User, Mail, Calendar, LogOut } from 'lucide-react';
@@ -7,6 +10,80 @@ import { formatCurrency } from '@/lib/utils';
 
 export function ProfilePage() {
   const { user, signOut } = useAuth();
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [budget, setBudget] = useState<Budget | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (user) {
+      loadProfileData();
+    }
+  }, [user]);
+
+  const loadProfileData = async () => {
+    if (!user) return;
+    
+    try {
+      const [allExpenses, currentBudget] = await Promise.all([
+        expenseService.getExpenses(user.id),
+        budgetService.getCurrentBudget(user.id)
+      ]);
+      
+      setExpenses(allExpenses || []);
+      setBudget(currentBudget);
+    } catch (error) {
+      console.error('Error loading profile data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getCurrentMonthTotal = () => {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    
+    return expenses
+      .filter(expense => {
+        const expenseDate = new Date(expense.date);
+        return expenseDate.getMonth() === currentMonth && 
+               expenseDate.getFullYear() === currentYear;
+      })
+      .reduce((sum, expense) => sum + expense.amount, 0);
+  };
+
+  const getAverageDailySpend = () => {
+    const currentMonthTotal = getCurrentMonthTotal();
+    const currentDay = new Date().getDate();
+    return currentDay > 0 ? currentMonthTotal / currentDay : 0;
+  };
+
+  const getTopCategory = () => {
+    if (expenses.length === 0) return null;
+    
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    
+    const monthlyExpenses = expenses.filter(expense => {
+      const expenseDate = new Date(expense.date);
+      return expenseDate.getMonth() === currentMonth && 
+             expenseDate.getFullYear() === currentYear;
+    });
+    
+    if (monthlyExpenses.length === 0) return null;
+    
+    const categoryTotals: { [key: string]: number } = {};
+    
+    monthlyExpenses.forEach(expense => {
+      categoryTotals[expense.category] = (categoryTotals[expense.category] || 0) + expense.amount;
+    });
+    
+    const topCategory = Object.entries(categoryTotals)
+      .sort(([,a], [,b]) => b - a)[0];
+    
+    return topCategory ? topCategory[0] : null;
+  };
 
   const userJoinDate = user?.created_at 
     ? new Date(user.created_at).toLocaleDateString('en-IN', {
@@ -15,6 +92,11 @@ export function ProfilePage() {
         year: 'numeric'
       })
     : 'Unknown';
+
+  const currentMonthTotal = getCurrentMonthTotal();
+  const totalExpenses = expenses.length;
+  const averageDailySpend = getAverageDailySpend();
+  const topCategory = getTopCategory();
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
@@ -107,24 +189,35 @@ export function ProfilePage() {
             <CardTitle>Quick Statistics</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="text-center p-4 bg-blue-50 rounded-lg">
-                <p className="text-2xl font-bold text-blue-600">₹0</p>
-                <p className="text-sm text-gray-600">This Month</p>
+            {loading ? (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {[1,2,3,4].map(i => (
+                  <div key={i} className="text-center p-4 bg-gray-100 rounded-lg animate-pulse">
+                    <div className="h-8 bg-gray-200 rounded mb-2"></div>
+                    <div className="h-4 bg-gray-200 rounded"></div>
+                  </div>
+                ))}
               </div>
-              <div className="text-center p-4 bg-green-50 rounded-lg">
-                <p className="text-2xl font-bold text-green-600">0</p>
-                <p className="text-sm text-gray-600">Total Expenses</p>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="text-center p-4 bg-blue-50 rounded-lg">
+                  <p className="text-2xl font-bold text-blue-600">{formatCurrency(currentMonthTotal)}</p>
+                  <p className="text-sm text-gray-600">This Month</p>
+                </div>
+                <div className="text-center p-4 bg-green-50 rounded-lg">
+                  <p className="text-2xl font-bold text-green-600">{totalExpenses}</p>
+                  <p className="text-sm text-gray-600">Total Expenses</p>
+                </div>
+                <div className="text-center p-4 bg-purple-50 rounded-lg">
+                  <p className="text-2xl font-bold text-purple-600">{formatCurrency(averageDailySpend)}</p>
+                  <p className="text-sm text-gray-600">Average Daily</p>
+                </div>
+                <div className="text-center p-4 bg-orange-50 rounded-lg">
+                  <p className="text-2xl font-bold text-orange-600">{topCategory || '-'}</p>
+                  <p className="text-sm text-gray-600">Top Category</p>
+                </div>
               </div>
-              <div className="text-center p-4 bg-purple-50 rounded-lg">
-                <p className="text-2xl font-bold text-purple-600">₹0</p>
-                <p className="text-sm text-gray-600">Average Daily</p>
-              </div>
-              <div className="text-center p-4 bg-orange-50 rounded-lg">
-                <p className="text-2xl font-bold text-orange-600">-</p>
-                <p className="text-sm text-gray-600">Top Category</p>
-              </div>
-            </div>
+            )}
           </CardContent>
         </Card>
       </div>

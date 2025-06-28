@@ -93,28 +93,30 @@ export function ExpenseChart({ expenses }: ExpenseChartProps) {
             Expenses by Category
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <ChartContainer config={chartConfig} className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={chartData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ category, percent }) => `${category} ${(percent * 100).toFixed(0)}%`}
-                  outerRadius={100}
-                  fill="#8884d8"
-                  dataKey="amount"
-                >
-                  {chartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <ChartTooltip content={<CustomTooltip />} />
-              </PieChart>
-            </ResponsiveContainer>
-          </ChartContainer>
+        <CardContent className="p-4">
+          <div className="w-full h-[280px]">
+            <ChartContainer config={chartConfig} className="h-full w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart margin={{ top: 5, right: 5, bottom: 5, left: 5 }}>
+                  <Pie
+                    data={chartData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ category, percent }) => `${category} ${(percent * 100).toFixed(0)}%`}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="amount"
+                  >
+                    {chartData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <ChartTooltip content={<CustomTooltip />} />
+                </PieChart>
+              </ResponsiveContainer>
+            </ChartContainer>
+          </div>
         </CardContent>
       </Card>
 
@@ -127,35 +129,37 @@ export function ExpenseChart({ expenses }: ExpenseChartProps) {
               Monthly Spending Trend
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <ChartContainer config={chartConfig} className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={barChartData}>
-                  <XAxis 
-                    dataKey="month" 
-                    tick={{ fontSize: 12 }}
-                    tickLine={{ stroke: '#e5e7eb' }}
-                  />
-                  <YAxis 
-                    tickFormatter={(value) => `₹${value}`} 
-                    tick={{ fontSize: 12 }}
-                    tickLine={{ stroke: '#e5e7eb' }}
-                  />
-                  <ChartTooltip content={<CustomTooltip />} />
-                  <Bar 
-                    dataKey="amount" 
-                    fill="url(#colorGradient)" 
-                    radius={[6, 6, 0, 0]}
-                  />
-                  <defs>
-                    <linearGradient id="colorGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#3B82F6" stopOpacity={0.3}/>
-                    </linearGradient>
-                  </defs>
-                </BarChart>
-              </ResponsiveContainer>
-            </ChartContainer>
+          <CardContent className="p-4">
+            <div className="w-full h-[280px]">
+              <ChartContainer config={chartConfig} className="h-full w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={barChartData} margin={{ top: 5, right: 5, bottom: 5, left: 5 }}>
+                    <XAxis 
+                      dataKey="month" 
+                      tick={{ fontSize: 12 }}
+                      tickLine={{ stroke: '#e5e7eb' }}
+                    />
+                    <YAxis 
+                      tickFormatter={(value) => `₹${value}`} 
+                      tick={{ fontSize: 12 }}
+                      tickLine={{ stroke: '#e5e7eb' }}
+                    />
+                    <ChartTooltip content={<CustomTooltip />} />
+                    <Bar 
+                      dataKey="amount" 
+                      fill="url(#colorGradient)" 
+                      radius={[6, 6, 0, 0]}
+                    />
+                    <defs>
+                      <linearGradient id="colorGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.8}/>
+                        <stop offset="95%" stopColor="#3B82F6" stopOpacity={0.3}/>
+                      </linearGradient>
+                    </defs>
+                  </BarChart>
+                </ResponsiveContainer>
+              </ChartContainer>
+            </div>
           </CardContent>
         </Card>
       )}
