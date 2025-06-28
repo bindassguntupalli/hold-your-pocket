@@ -1,3 +1,4 @@
+
 import { createClient } from '@supabase/supabase-js';
 import { Expense, Budget } from '@/types/expense';
 
@@ -22,7 +23,7 @@ export const expenseService = {
       throw error;
     }
     console.log('Fetched expenses:', data?.length || 0);
-    return data;
+    return data || [];
   },
 
   // Add new expense
@@ -89,14 +90,15 @@ export const expenseService = {
       throw error;
     }
     console.log('Fetched expenses by date range:', data?.length || 0);
-    return data;
+    return data || [];
   },
 
   // Export expenses to CSV
   async exportExpensesToCSV(userId: string, year: number, month: number) {
     console.log('Exporting expenses to CSV:', userId, year, month);
     const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
-    const endDate = `${year}-${String(month).padStart(2, '0')}-31`;
+    // Fix end date calculation to avoid invalid dates like 2025-06-31
+    const endDate = new Date(year, month, 0).toISOString().split('T')[0]; // Last day of the month
     
     const { data, error } = await supabase
       .from('expenses')
@@ -111,16 +113,16 @@ export const expenseService = {
       throw error;
     }
     console.log('Exported expenses:', data?.length || 0);
-    return data;
+    return data || [];
   }
 };
 
 export const budgetService = {
-  // Get current month budget
+  // Get current month budget - fixed to handle multiple entries
   async getCurrentBudget(userId: string) {
     const now = new Date();
     const year = now.getFullYear();
-    const month = now.getMonth() + 1; // JavaScript months are 0-indexed
+    const month = now.getMonth() + 1;
     
     console.log('Fetching current budget for:', userId, year, month);
     
@@ -130,48 +132,41 @@ export const budgetService = {
       .eq('user_id', userId)
       .eq('year', year)
       .eq('month', month)
-      .maybeSingle(); // Use maybeSingle instead of single to avoid errors when no data
+      .order('created_at', { ascending: false })
+      .limit(1);
     
     if (error) {
       console.error('Error fetching budget:', error);
       throw error;
     }
     
-    console.log('Fetched budget:', data);
-    return data;
+    const budget = data && data.length > 0 ? data[0] : null;
+    console.log('Fetched budget:', budget);
+    return budget;
   },
 
-  // Set monthly budget
+  // Set monthly budget - clean up duplicates and set new one
   async setBudget(userId: string, amount: number) {
     const now = new Date();
     const year = now.getFullYear();
-    const month = now.getMonth() + 1; // JavaScript months are 0-indexed
+    const month = now.getMonth() + 1;
     
     console.log('Setting budget:', userId, year, month, amount);
     
-    // First try to update existing budget
-    const { data: existingBudget } = await supabase
-      .from('budgets')
-      .select('id')
-      .eq('user_id', userId)
-      .eq('year', year)
-      .eq('month', month)
-      .maybeSingle();
-
-    let result;
-    if (existingBudget) {
-      // Update existing budget
-      const { data, error } = await supabase
+    try {
+      // First, delete any existing budgets for this month/year to avoid duplicates
+      const { error: deleteError } = await supabase
         .from('budgets')
-        .update({ amount, updated_at: new Date().toISOString() })
-        .eq('id', existingBudget.id)
-        .select()
-        .single();
+        .delete()
+        .eq('user_id', userId)
+        .eq('year', year)
+        .eq('month', month);
       
-      if (error) throw error;
-      result = data;
-    } else {
-      // Insert new budget
+      if (deleteError) {
+        console.error('Error deleting existing budgets:', deleteError);
+      }
+      
+      // Now insert the new budget
       const { data, error } = await supabase
         .from('budgets')
         .insert({
@@ -184,12 +179,17 @@ export const budgetService = {
         .select()
         .single();
       
-      if (error) throw error;
-      result = data;
+      if (error) {
+        console.error('Error inserting budget:', error);
+        throw error;
+      }
+      
+      console.log('Set budget successfully:', data);
+      return data;
+    } catch (error) {
+      console.error('Error in setBudget:', error);
+      throw error;
     }
-    
-    console.log('Set budget:', result);
-    return result;
   },
 
   // Get all budgets for a user
@@ -207,7 +207,7 @@ export const budgetService = {
       throw error;
     }
     console.log('Fetched user budgets:', data?.length || 0);
-    return data;
+    return data || [];
   }
 };
 

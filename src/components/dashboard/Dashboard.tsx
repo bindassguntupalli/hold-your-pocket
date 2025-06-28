@@ -42,24 +42,22 @@ export function Dashboard() {
       setLoading(true);
       console.log('Loading dashboard data for user:', user.id);
       
-      const [allExpenses, currentBudget] = await Promise.all([
-        expenseService.getExpenses(user.id),
-        budgetService.getCurrentBudget(user.id)
-      ]);
-      
+      // Load data sequentially to avoid race conditions
+      const allExpenses = await expenseService.getExpenses(user.id);
       console.log('Loaded expenses:', allExpenses?.length || 0);
-      console.log('Loaded budget:', currentBudget);
-      
       setExpenses(allExpenses || []);
+      
+      const currentBudget = await budgetService.getCurrentBudget(user.id);
+      console.log('Loaded budget:', currentBudget);
       setBudget(currentBudget);
       
-      // Force a small delay to ensure state is updated
-      setTimeout(() => {
-        console.log('Budget state updated:', currentBudget);
-      }, 100);
+      console.log('Dashboard data loaded successfully');
     } catch (error) {
       console.error('Error loading dashboard data:', error);
-      toast.error('Failed to load dashboard data');
+      toast.error('Failed to load dashboard data. Please refresh the page.');
+      // Set default values instead of leaving undefined
+      setExpenses([]);
+      setBudget(null);
     } finally {
       setLoading(false);
     }
@@ -346,7 +344,7 @@ export function Dashboard() {
                   )}
                 </div>
                 <div className="p-4 bg-white/20 rounded-2xl backdrop-blur-sm">
-                  <Calendar className="h-8 w-8text-white" />
+                  <Calendar className="h-8 w-8 text-white" />
                 </div>
               </div>
             </CardContent>
