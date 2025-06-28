@@ -1,3 +1,4 @@
+
 import { createClient } from '@supabase/supabase-js';
 import { Expense, Budget } from '@/types/expense';
 
@@ -69,8 +70,10 @@ export const expenseService = {
 
   // Export expenses to CSV
   async exportExpensesToCSV(userId: string, month: string) {
-    const startDate = `${month}-01`;
-    const endDate = `${month}-31`;
+    const year = new Date().getFullYear();
+    const monthNum = String(new Date().getMonth() + 1).padStart(2, '0');
+    const startDate = `${year}-${monthNum}-01`;
+    const endDate = `${year}-${monthNum}-31`;
     
     const { data, error } = await supabase
       .from('expenses')
@@ -86,7 +89,7 @@ export const expenseService = {
 };
 
 export const budgetService = {
-  // Get current month budget - Supabase only
+  // Get current month budget
   async getCurrentBudget(userId: string) {
     const now = new Date();
     const month = now.toISOString().substring(0, 7); // YYYY-MM format
@@ -102,7 +105,7 @@ export const budgetService = {
     return data;
   },
 
-  // Set monthly budget - Supabase only
+  // Set monthly budget
   async setBudget(userId: string, amount: number) {
     const now = new Date();
     const month = now.toISOString().substring(0, 7);
@@ -114,9 +117,7 @@ export const budgetService = {
         user_id: userId,
         month,
         amount,
-        year,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        year
       })
       .select()
       .single();
@@ -136,4 +137,28 @@ export const budgetService = {
     if (error) throw error;
     return data;
   }
+};
+
+// CSV Export utility
+export const exportToCSV = (data: any[], filename: string) => {
+  if (!data.length) return;
+  
+  const headers = Object.keys(data[0]);
+  const csvContent = [
+    headers.join(','),
+    ...data.map(row => headers.map(header => {
+      const value = row[header];
+      return typeof value === 'string' && value.includes(',') ? `"${value}"` : value;
+    }).join(','))
+  ].join('\n');
+  
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  link.setAttribute('href', url);
+  link.setAttribute('download', filename);
+  link.style.visibility = 'hidden';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 };
