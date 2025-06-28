@@ -21,8 +21,10 @@ export function MonthlyExpensesModal({ open, onOpenChange }: MonthlyExpensesModa
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const currentMonth = new Date().toISOString().substring(0, 7);
-  const monthName = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth() + 1;
+  const monthName = now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
   useEffect(() => {
     if (open && user) {
@@ -35,9 +37,10 @@ export function MonthlyExpensesModal({ open, onOpenChange }: MonthlyExpensesModa
     
     setLoading(true);
     try {
-      const startDate = `${currentMonth}-01`;
-      const endDate = `${currentMonth}-31`;
+      const startDate = `${currentYear}-${String(currentMonth).padStart(2, '0')}-01`;
+      const endDate = `${currentYear}-${String(currentMonth).padStart(2, '0')}-31`;
       
+      console.log('Loading monthly expenses:', startDate, endDate);
       const data = await expenseService.getExpensesByDateRange(user.id, startDate, endDate);
       setExpenses(data || []);
     } catch (error) {
@@ -52,7 +55,7 @@ export function MonthlyExpensesModal({ open, onOpenChange }: MonthlyExpensesModa
     if (!user) return;
     
     try {
-      const data = await expenseService.exportExpensesToCSV(user.id, currentMonth);
+      const data = await expenseService.exportExpensesToCSV(user.id, currentYear, currentMonth);
       
       if (!data || data.length === 0) {
         toast.error('No expenses found for this month');
@@ -99,6 +102,7 @@ export function MonthlyExpensesModal({ open, onOpenChange }: MonthlyExpensesModa
       'Utilities': 'bg-yellow-100 text-yellow-800 border-yellow-200',
       'Travel': 'bg-indigo-100 text-indigo-800 border-indigo-200',
       'Education': 'bg-teal-100 text-teal-800 border-teal-200',
+      'Other': 'bg-gray-100 text-gray-800 border-gray-200',
     };
     return colors[category] || 'bg-gray-100 text-gray-800 border-gray-200';
   };

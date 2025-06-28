@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { toast } from '@/components/ui/sonner';
-import { Target, IndianRupee } from 'lucide-react';
+import { Target } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 
 interface BudgetFormProps {
@@ -72,7 +72,7 @@ export function BudgetForm({ currentBudget, onBudgetSet }: BudgetFormProps) {
             </Label>
             <div className="relative mt-2">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <IndianRupee className="h-5 w-5 text-gray-400" />
+                <span className="text-gray-400">₹</span>
               </div>
               <Input
                 id="budget"
@@ -82,7 +82,7 @@ export function BudgetForm({ currentBudget, onBudgetSet }: BudgetFormProps) {
                 placeholder="10000"
                 value={budgetAmount}
                 onChange={(e) => setBudgetAmount(e.target.value)}
-                className="pl-10 text-lg h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                className="pl-8 text-lg h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                 required
               />
             </div>

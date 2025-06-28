@@ -62,6 +62,7 @@ export function Dashboard() {
   };
 
   const handleRefresh = () => {
+    console.log('Refreshing dashboard data');
     setRefreshTrigger(prev => prev + 1);
   };
 
@@ -78,7 +79,20 @@ export function Dashboard() {
       })
       .reduce((sum, expense) => sum + expense.amount, 0);
     
+    console.log('Current month total:', monthlyTotal);
     return monthlyTotal;
+  };
+
+  const getCurrentMonthExpenses = () => {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    
+    return expenses.filter(expense => {
+      const expenseDate = new Date(expense.date);
+      return expenseDate.getMonth() === currentMonth && 
+             expenseDate.getFullYear() === currentYear;
+    });
   };
 
   const getTopCategory = () => {
@@ -93,6 +107,8 @@ export function Dashboard() {
       return expenseDate.getMonth() === currentMonth && 
              expenseDate.getFullYear() === currentYear;
     });
+    
+    if (monthlyExpenses.length === 0) return null;
     
     const categoryTotals: { [key: string]: number } = {};
     
@@ -128,8 +144,9 @@ export function Dashboard() {
       const now = new Date();
       const monthName = now.toLocaleDateString('en-IN', { month: 'long' });
       const year = now.getFullYear();
+      const month = now.getMonth() + 1;
       
-      const monthlyExpenses = await expenseService.exportExpensesToCSV(user.id, now.toISOString().substring(0, 7));
+      const monthlyExpenses = await expenseService.exportExpensesToCSV(user.id, year, month);
       
       if (monthlyExpenses && monthlyExpenses.length > 0) {
         const csvData = monthlyExpenses.map(expense => ({
@@ -151,6 +168,7 @@ export function Dashboard() {
   };
 
   const currentMonthTotal = getCurrentMonthTotal();
+  const currentMonthExpenses = getCurrentMonthExpenses();
   const topCategory = getTopCategory();
   const budgetStatus = getBudgetStatus();
   const remainingBudget = budget ? Math.max(0, budget.amount - currentMonthTotal) : 0;
@@ -248,11 +266,7 @@ export function Dashboard() {
                   </p>
                   <p className="text-blue-100 text-sm mt-2 flex items-center gap-2">
                     <span className="bg-white/20 px-2 py-1 rounded-full text-xs">
-                      {expenses.filter(e => {
-                        const date = new Date(e.date);
-                        const now = new Date();
-                        return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
-                      }).length} transactions
+                      {currentMonthExpenses.length} transactions
                     </span>
                     • Click to view details
                   </p>

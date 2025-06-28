@@ -11,51 +11,72 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 export const expenseService = {
   // Get all expenses for a user
   async getExpenses(userId: string) {
+    console.log('Fetching expenses for user:', userId);
     const { data, error } = await supabase
       .from('expenses')
       .select('*')
       .eq('user_id', userId)
       .order('date', { ascending: false });
     
-    if (error) throw error;
+    if (error) {
+      console.error('Error fetching expenses:', error);
+      throw error;
+    }
+    console.log('Fetched expenses:', data?.length || 0);
     return data;
   },
 
   // Add new expense
   async addExpense(expense: Omit<Expense, 'id' | 'created_at' | 'updated_at'>) {
+    console.log('Adding expense:', expense);
     const { data, error } = await supabase
       .from('expenses')
       .insert([expense])
       .select();
     
-    if (error) throw error;
+    if (error) {
+      console.error('Error adding expense:', error);
+      throw error;
+    }
+    console.log('Added expense:', data[0]);
     return data[0];
   },
 
   // Update expense
   async updateExpense(id: string, updates: Partial<Expense>) {
+    console.log('Updating expense:', id, updates);
     const { data, error } = await supabase
       .from('expenses')
       .update(updates)
       .eq('id', id)
       .select();
     
-    if (error) throw error;
+    if (error) {
+      console.error('Error updating expense:', error);
+      throw error;
+    }
+    console.log('Updated expense:', data[0]);
     return data[0];
   },
 
   // Delete expense
   async deleteExpense(id: string) {
+    console.log('Deleting expense:', id);
     const { error } = await supabase
       .from('expenses')
       .delete()
       .eq('id', id);
     
-    if (error) throw error;
+    if (error) {
+      console.error('Error deleting expense:', error);
+      throw error;
+    }
+    console.log('Deleted expense:', id);
   },
 
   // Get expenses by date range
   async getExpensesByDateRange(userId: string, startDate: string, endDate: string) {
+    console.log('Fetching expenses by date range:', userId, startDate, endDate);
     const { data, error } = await supabase
       .from('expenses')
       .select('*')
@@ -64,16 +85,19 @@ export const expenseService = {
       .lte('date', endDate)
       .order('date', { ascending: false });
     
-    if (error) throw error;
+    if (error) {
+      console.error('Error fetching expenses by date range:', error);
+      throw error;
+    }
+    console.log('Fetched expenses by date range:', data?.length || 0);
     return data;
   },
 
   // Export expenses to CSV
-  async exportExpensesToCSV(userId: string, month: string) {
-    const year = new Date().getFullYear();
-    const monthNum = String(new Date().getMonth() + 1).padStart(2, '0');
-    const startDate = `${year}-${monthNum}-01`;
-    const endDate = `${year}-${monthNum}-31`;
+  async exportExpensesToCSV(userId: string, year: number, month: number) {
+    console.log('Exporting expenses to CSV:', userId, year, month);
+    const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
+    const endDate = `${year}-${String(month).padStart(2, '0')}-31`;
     
     const { data, error } = await supabase
       .from('expenses')
@@ -83,7 +107,11 @@ export const expenseService = {
       .lte('date', endDate)
       .order('date', { ascending: false });
     
-    if (error) throw error;
+    if (error) {
+      console.error('Error exporting expenses:', error);
+      throw error;
+    }
+    console.log('Exported expenses:', data?.length || 0);
     return data;
   }
 };
@@ -92,55 +120,78 @@ export const budgetService = {
   // Get current month budget
   async getCurrentBudget(userId: string) {
     const now = new Date();
-    const month = now.toISOString().substring(0, 7); // YYYY-MM format
+    const year = now.getFullYear();
+    const month = now.getMonth() + 1; // JavaScript months are 0-indexed
+    
+    console.log('Fetching current budget for:', userId, year, month);
     
     const { data, error } = await supabase
       .from('budgets')
       .select('*')
       .eq('user_id', userId)
+      .eq('year', year)
       .eq('month', month)
       .single();
     
-    if (error && error.code !== 'PGRST116') throw error;
+    if (error && error.code !== 'PGRST116') {
+      console.error('Error fetching budget:', error);
+      throw error;
+    }
+    
+    console.log('Fetched budget:', data);
     return data;
   },
 
   // Set monthly budget
   async setBudget(userId: string, amount: number) {
     const now = new Date();
-    const month = now.toISOString().substring(0, 7);
     const year = now.getFullYear();
+    const month = now.getMonth() + 1; // JavaScript months are 0-indexed
+    
+    console.log('Setting budget:', userId, year, month, amount);
     
     const { data, error } = await supabase
       .from('budgets')
       .upsert({
         user_id: userId,
+        year,
         month,
-        amount,
-        year
+        amount
       })
       .select()
       .single();
     
-    if (error) throw error;
+    if (error) {
+      console.error('Error setting budget:', error);
+      throw error;
+    }
+    
+    console.log('Set budget:', data);
     return data;
   },
 
   // Get all budgets for a user
   async getUserBudgets(userId: string) {
+    console.log('Fetching user budgets:', userId);
     const { data, error } = await supabase
       .from('budgets')
       .select('*')
       .eq('user_id', userId)
+      .order('year', { ascending: false })
       .order('month', { ascending: false });
     
-    if (error) throw error;
+    if (error) {
+      console.error('Error fetching user budgets:', error);
+      throw error;
+    }
+    console.log('Fetched user budgets:', data?.length || 0);
     return data;
   }
 };
 
 // CSV Export utility
 export const exportToCSV = (data: any[], filename: string) => {
+  console.log('Exporting to CSV:', filename, data.length);
   if (!data.length) return;
   
   const headers = Object.keys(data[0]);
@@ -161,4 +212,6 @@ export const exportToCSV = (data: any[], filename: string) => {
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
+  
+  console.log('CSV export completed');
 };
