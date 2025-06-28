@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { DollarSign, TrendingUp, AlertTriangle, Calendar, Plus, Target, Wallet, CreditCard, Download, Sparkles, Pencil } from 'lucide-react';
+import { DollarSign, TrendingUp, AlertTriangle, Calendar, Plus, Target, Wallet, CreditCard, Download, Sparkles, Pencil, Award } from 'lucide-react';
 import { ExpenseChart } from './ExpenseChart';
 import { RecentExpenses } from './RecentExpenses';
 import { AddExpenseForm } from '@/components/expense/AddExpenseForm';
