@@ -1,4 +1,3 @@
-
 import { createClient } from '@supabase/supabase-js';
 import { Expense, Budget } from '@/types/expense';
 
@@ -131,9 +130,9 @@ export const budgetService = {
       .eq('user_id', userId)
       .eq('year', year)
       .eq('month', month)
-      .single();
+      .maybeSingle(); // Use maybeSingle instead of single to avoid errors when no data
     
-    if (error && error.code !== 'PGRST116') {
+    if (error) {
       console.error('Error fetching budget:', error);
       throw error;
     }
@@ -150,24 +149,47 @@ export const budgetService = {
     
     console.log('Setting budget:', userId, year, month, amount);
     
-    const { data, error } = await supabase
+    // First try to update existing budget
+    const { data: existingBudget } = await supabase
       .from('budgets')
-      .upsert({
-        user_id: userId,
-        year,
-        month,
-        amount
-      })
-      .select()
-      .single();
-    
-    if (error) {
-      console.error('Error setting budget:', error);
-      throw error;
+      .select('id')
+      .eq('user_id', userId)
+      .eq('year', year)
+      .eq('month', month)
+      .maybeSingle();
+
+    let result;
+    if (existingBudget) {
+      // Update existing budget
+      const { data, error } = await supabase
+        .from('budgets')
+        .update({ amount, updated_at: new Date().toISOString() })
+        .eq('id', existingBudget.id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      result = data;
+    } else {
+      // Insert new budget
+      const { data, error } = await supabase
+        .from('budgets')
+        .insert({
+          user_id: userId,
+          year,
+          month,
+          amount,
+          created_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      result = data;
     }
     
-    console.log('Set budget:', data);
-    return data;
+    console.log('Set budget:', result);
+    return result;
   },
 
   // Get all budgets for a user

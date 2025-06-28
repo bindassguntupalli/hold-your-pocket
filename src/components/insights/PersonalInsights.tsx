@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { expenseService } from '@/lib/supabase';
@@ -214,7 +213,7 @@ export function PersonalInsights() {
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Daily Spending Chart */}
+        {/* Daily Spending Chart - Fixed alignment */}
         <Card className="border-0 shadow-lg">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -222,43 +221,45 @@ export function PersonalInsights() {
               7-Day Spending Pattern
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <ChartContainer config={{amount: {label: "Amount"}}} className="h-[200px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={dailySpending}>
-                  <defs>
-                    <linearGradient id="colorGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="#3B82F6" stopOpacity={0.1}/>
-                    </linearGradient>
-                  </defs>
-                  <XAxis dataKey="date" tick={{ fontSize: 12 }} />
-                  <YAxis tickFormatter={(value) => `₹${value}`} tick={{ fontSize: 12 }} />
-                  <ChartTooltip 
-                    content={({ active, payload, label }) => {
-                      if (active && payload && payload.length) {
-                        return (
-                          <div className="bg-white p-3 border rounded-lg shadow-lg">
-                            <p className="font-medium">{label}</p>
-                            <p className="text-blue-600 font-bold">
-                              {formatCurrency(payload[0].value as number)}
-                            </p>
-                          </div>
-                        );
-                      }
-                      return null;
-                    }}
-                  />
-                  <Area 
-                    type="monotone" 
-                    dataKey="amount" 
-                    stroke="#3B82F6" 
-                    fill="url(#colorGradient)"
-                    strokeWidth={2}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </ChartContainer>
+          <CardContent className="p-4">
+            <div className="w-full h-[280px]">
+              <ChartContainer config={{amount: {label: "Amount"}}} className="h-full w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={dailySpending} margin={{ top: 10, right: 10, bottom: 10, left: 10 }}>
+                    <defs>
+                      <linearGradient id="colorGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor="#3B82F6" stopOpacity={0.1}/>
+                      </linearGradient>
+                    </defs>
+                    <XAxis dataKey="date" tick={{ fontSize: 12 }} tickLine={{ stroke: '#e5e7eb' }} />
+                    <YAxis tickFormatter={(value) => `₹${value}`} tick={{ fontSize: 12 }} tickLine={{ stroke: '#e5e7eb' }} />
+                    <ChartTooltip 
+                      content={({ active, payload, label }) => {
+                        if (active && payload && payload.length) {
+                          return (
+                            <div className="bg-white p-3 border rounded-lg shadow-lg">
+                              <p className="font-medium">{label}</p>
+                              <p className="text-blue-600 font-bold">
+                                {formatCurrency(payload[0].value as number)}
+                              </p>
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
+                    />
+                    <Area 
+                      type="monotone" 
+                      dataKey="amount" 
+                      stroke="#3B82F6" 
+                      fill="url(#colorGradient)"
+                      strokeWidth={2}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </ChartContainer>
+            </div>
           </CardContent>
         </Card>
 

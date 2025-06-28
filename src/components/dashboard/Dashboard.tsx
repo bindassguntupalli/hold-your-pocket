@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { expenseService, budgetService, exportToCSV } from '@/lib/supabase';
@@ -53,6 +52,11 @@ export function Dashboard() {
       
       setExpenses(allExpenses || []);
       setBudget(currentBudget);
+      
+      // Force a small delay to ensure state is updated
+      setTimeout(() => {
+        console.log('Budget state updated:', currentBudget);
+      }, 100);
     } catch (error) {
       console.error('Error loading dashboard data:', error);
       toast.error('Failed to load dashboard data');
@@ -123,10 +127,13 @@ export function Dashboard() {
   };
 
   const getBudgetStatus = () => {
-    if (!budget) return { status: 'No Budget Set', color: 'bg-gray-100 text-gray-600', percentage: 0 };
+    console.log('Getting budget status, budget:', budget);
+    if (!budget || !budget.amount) return { status: 'No Budget Set', color: 'bg-gray-100 text-gray-600', percentage: 0 };
     
     const currentMonthTotal = getCurrentMonthTotal();
     const percentage = (currentMonthTotal / budget.amount) * 100;
+    
+    console.log('Budget calculation:', { currentMonthTotal, budgetAmount: budget.amount, percentage });
     
     if (percentage >= 100) {
       return { status: 'Budget Exceeded', color: 'bg-red-100 text-red-800', percentage };
@@ -171,7 +178,9 @@ export function Dashboard() {
   const currentMonthExpenses = getCurrentMonthExpenses();
   const topCategory = getTopCategory();
   const budgetStatus = getBudgetStatus();
-  const remainingBudget = budget ? Math.max(0, budget.amount - currentMonthTotal) : 0;
+  const remainingBudget = budget && budget.amount ? Math.max(0, budget.amount - currentMonthTotal) : 0;
+
+  console.log('Dashboard render - Budget data:', { budget, budgetStatus, remainingBudget });
 
   if (loading) {
     return (
@@ -343,7 +352,7 @@ export function Dashboard() {
             </CardContent>
           </Card>
 
-          {/* Budget Status Card */}
+          {/* Budget Status Card - Enhanced with better budget display */}
           <Card 
             className="relative overflow-hidden border-0 shadow-xl hover:shadow-2xl transition-all duration-300 cursor-pointer bg-gradient-to-br from-orange-500 via-red-500 to-pink-600 text-white transform hover:scale-105 hover:-translate-y-1"
             onClick={() => setShowBudgetForm(true)}
@@ -356,7 +365,7 @@ export function Dashboard() {
                     <Target className="h-4 w-4" />
                     Budget Status
                   </p>
-                  {budget ? (
+                  {budget && budget.amount ? (
                     <div className="mt-1">
                       <p className="text-xl font-bold text-white">
                         {formatCurrency(budget.amount)}
@@ -372,7 +381,7 @@ export function Dashboard() {
                           />
                         </div>
                         <Badge className={`mt-2 ${budgetStatus.color} text-xs`}>
-                          {budgetStatus.status}
+                          {budgetStatus.status} ({budgetStatus.percentage.toFixed(1)}%)
                         </Badge>
                       </div>
                     </div>
@@ -488,6 +497,7 @@ export function Dashboard() {
             <BudgetForm 
               currentBudget={budget?.amount}
               onBudgetSet={() => {
+                console.log('Budget set callback triggered');
                 handleRefresh();
                 setShowBudgetForm(false);
               }}
